@@ -1,0 +1,16 @@
+version: '3'
+services:
+  scraper:
+    image: cleantoolbox/ubuntu-curl-html2text   
+    container_name: scraper   
+    volumes:
+    - "./playlist:${FOLDERSHARED}"
+    - ./code/:/code
+    environment:
+      DOMAIN: ${DOMAIN}
+      MASK: ${MASK}
+      FOLDERSHARED: ${FOLDERSHARED}
+      PROXY: ${PROXY}
+      PORTPROXY: ${PORTPROXY}
+    entrypoint:
+      - /code/entrypoint.sh   

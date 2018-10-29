@@ -37,7 +37,22 @@ SHORTCUTNAME=watchSports
 * PORTPROXY - Port where acestreamproxy server it will be exposed, if you set PROXY to 0 this option it will be ignored
 * ACESTREAM_OR_VLC_PATH - path to the VLC if you set PROXY to 1 or ACESTREAM path if you set PROXY to 0
 * SHORTCUTNAME - Name of shortcut if you generate it with script.
- 
+
+## Powershell warning
+If you download this script and try running it with powershell, maybe you will receive some advertise. This is because the restriction on powershell to execute unsigned downloaded scripts. 
+
+Open powershell with administrator rights
+
+```
+PS C:\> Set-ExecutionPolicy Bypass
+```
+References:
+
+https://social.technet.microsoft.com/wiki/contents/articles/38496.unblock-downloaded-powershell-scripts.aspx
+
+https://blog.netspi.com/15-ways-to-bypass-the-powershell-execution-policy/
+
+
 ## Shortcut
 
 There are a script inside main folder where you can create a shortcut to execute everything, the shortcut will be created in Desktop folder. You can create or remove shortcut whenever you want.
@@ -46,6 +61,9 @@ There are a script inside main folder where you can create a shortcut to execute
 
 There are a script to remove all containers, images and shortcut. 
 
+# How works
+
+![acestreamplaylisthowworks](https://user-images.githubusercontent.com/44523414/47682660-68554f00-dbcd-11e8-96d4-d344393993b9.gif)
 
 # TODO
 
@@ -59,6 +77,8 @@ There are several things to do:
 	* Include  something to always on top
 	
 # My environment
+This small project was build under a environment, i think that it will work with another, but just in case i put my environment.
+
 ## Docker
 ```
 Client:
@@ -90,3 +110,6 @@ docker-compose version 1.22.0, build f46880fe
              10.0.17134 N/D Compilación 17134
              Microsoft Corporation
 ```
+# References
+
+This project was based in:

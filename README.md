@@ -112,4 +112,11 @@ docker-compose version 1.22.0, build f46880fe
 ```
 # References
 
-This project was based in:
+This project was based in or use solutions from:
+
+https://hub.docker.com/r/ikatson/aceproxy/
+
+https://github.com/toptnc/getarenavision
+
+
+

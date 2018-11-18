@@ -1,6 +1,6 @@
 # acestream Playlist
 
-This repository is for generate acestream playlist and watch it on acestream player VLC, you can also  using a acestream proxy server.  The main goal of this project is that you can use as portable, when you finish your event you can close it and remove everything.  For now there are only windows scripts to start and stop, further it will be also in linux.
+This repository is for generate acestream playlist and watch it via browser with vlc protocol asociation or you can play the playlists in playlist folder with vlc playwe if you have aceproxy actived or with acestream playr.  The main goal of this project is that you can use as portable, when you finish your event you can close it and remove everything.  For now there are only windows scripts to start and stop, further it will be also in linux.
 
 
 ## Requirements
@@ -24,18 +24,23 @@ There are a file **.env** where you can configure several parameters:
 ```
 DOMAIN=http://arenavision.us
 MASK=DATE@TIME@TIMEZONE@SPORT@COMPETITION@EVENT@LANG
+IGNOREPASTEVENTS=1
+PASTEVENTSTHRESOLDHOURS=0
 FOLDERSHARED=/playlist
 PROXY=1
 PORTPROXY=8000
-ACESTREAM_OR_VLC_PATH=C:/Program Files (x86)/VideoLAN/VLC/vlc.exe
+WEBPORT=8181
+VLC_PATH=C:/Program Files/VideoLAN/VLC
 SHORTCUTNAME=watchSports
 ```
 * DOMAIN - The domain where you can make scrape and extract the playlist channels and events.
 * MASK - Is the mask that you can use to generate event name in playlist to reproduce, separated by @ symbol.
+* IGNOREPASTEVENTS - if you want ignore past events you should put 1.
+* PASTEVENTSTHRESOLDHOURS - Put the number of hours to consider a event that already happen. for example: one example that started one hour ago, maybe you want see it because its not   finished
 * FOLDERSHARED - Name of the folder use it by scrape container.
 * PROXY - If set to 1, it will use a container with acestream server proxy. This option is better if you dont want to have the acestream engine in you host. if you put to 0 you must have acestream player  and engine in your host machine.
 * PORTPROXY - Port where acestreamproxy server it will be exposed, if you set PROXY to 0 this option it will be ignored
-* ACESTREAM_OR_VLC_PATH - path to the VLC if you set PROXY to 1 or ACESTREAM path if you set PROXY to 0
+* VLC_PATH - path to the VLC for vlc asotiation protocol and to open playlist events with it
 * SHORTCUTNAME - Name of shortcut if you generate it with script.
 
 ## Powershell warning

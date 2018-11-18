@@ -1,6 +1,6 @@
 # acestream Playlist
 
-This repository is for generate acestream playlist and watch it on acestream player (with acestream engine) or VLC using a acestream proxy server.  The main goal of this project is that you can use as portable, when you finish your event you can close it and remove everything.  For now there are only windows scripts to start and stop, further it will be also in linux.
+This repository is for generate acestream playlist and watch it on acestream player VLC, you can also  using a acestream proxy server.  The main goal of this project is that you can use as portable, when you finish your event you can close it and remove everything.  For now there are only windows scripts to start and stop, further it will be also in linux.
 
 
 ## Requirements

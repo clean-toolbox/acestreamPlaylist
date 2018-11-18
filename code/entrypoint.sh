@@ -24,9 +24,13 @@
 # apt-get -qq update -y > /dev/null
 # apt-get -qq install curl html2text -y > /dev/null
 
-m3ufileevents="${FOLDERSHARED}/events.m3u"
-m3ufilechannels="${FOLDERSHARED}/channels.m3u"
+m3ufileeventsvlc="${FOLDERSHARED}/events.m3u"
+m3ufilechannelsvlc="${FOLDERSHARED}/channels.m3u"
 
+m3ufileeventsap="${FOLDERSHARED}/eventsacestreamplayer.m3u"
+m3ufilechannelsap="${FOLDERSHARED}/channelsacestreamplayer.m3u"
+
+eventstohtml="${FOLDERSHARED}/eventstohtml.txt"
 fronturl=${DOMAIN}
 
 #mask="DATE@TIME@TIMEZONE@SPORT@COMPETITION@EVENT@LANG"
@@ -51,7 +55,7 @@ LNEND=$((LNEND - 1))
 awk -v start="$LNSTART" -v end="$LNEND" 'NR >= start && NR <= end' $guidetemp > $guidefile
 
 echo > $m3ufilechannels
-
+echo > $m3ufilechannelsap
 links=$(curl -s --cookie "beget=begetok" $fronturl | grep -o '\<a href.*\>' | sed 's/\<a\ href/\n\<a\ href/g' | grep ArenaVision)
 
     IFS='
@@ -68,34 +72,68 @@ do
     id=${arenalink:12:40}
 	CHANNELSIDS[$channel]="$id"
 
+	echo \#EXTINF:-1,"$arenatitle" >> $m3ufilechannelsap
 	echo \#EXTINF:-1,"$arenatitle" >> $m3ufilechannels
-	echo $arenalink >> $m3ufilechannels
+
+	echo $arenalink >> $m3ufilechannelsap
+    echo "http://${HOSTIP}:${PORTPROXY:- 8000}/pid/$id/stream.mp4" >> $m3ufilechannels
+
 done
 
 echo > $m3ufileevents
-
+echo > $m3ufileeventsap
+echo > $eventstohtml
 while IFS='' read -r line || [[ -n "$line" ]]; do
-	
 	
 	fecha=${line:0:10}
 	fecha="${fecha// /}"
 
-	if [ ${#fecha} -ge 10 ];then		
+	if [ ${#fecha} -ge 10 ]
+	then		
 		line="$(echo -e "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"	
 		DATA[DATE]=${line:0:10}
 		DATA[TIME]=${line:11:5}
+
+
 		DATA[TIMEZONE]=${line:17:4}
-		DATA[SPORT]=${line:22:10}
-		DATA[COMPETITION]=${line:33:18}
-		DATA[EVENT]=${line:53:35}
+		
+		if [ "${DATA[TIMEZONE]}" != "CEST" ]
+		then
+			DATA[SPORT]=${line:21:10}
+			DATA[COMPETITION]=${line:32:18}
+			DATA[EVENT]=${line:52:35}			
+		else
+			DATA[SPORT]=${line:22:10}
+			DATA[COMPETITION]=${line:33:18}
+			DATA[EVENT]=${line:53:35}
+		fi	
 
 		for K in "${!DATA[@]}"; do
 			DATA[$K]="$(echo -e "${DATA[$K]}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"			
 		done
 
 	fi
+	
+	
+	
+	if [ "${IGNOREPASTEVENTS}" = "1" ]
+	then
+			IFS='/' read -r -a date <<< "${DATA[DATE]}"
+			EventDate="${date[2]}-${date[1]}-${date[0]}"
+			EventDateToMyTimeZone=$(date -d "$EventDate ${DATA[TIME]} ${DATA[TIMEZONE]}")
+
+			EventDateToMyTimeZoneF=$(date "+%s" -d "$EventDate ${DATA[TIME]} ${DATA[TIMEZONE]}")
+			
+			now=$(date -d "-${PASTEVENTSTHRESOLDHOURS} hour" "+%s")
+				
+			if [ $now -gt $EventDateToMyTimeZoneF ]; then
+				echo "EVENTO YA CADUCADO"
+				continue
+			fi  	
+	fi
 
 	
+
 
 	channellang="$(echo "$line" | grep -o '[^[:space:]]\+\([[:space:]]\+[^[:space:]]\+\)\{1\} *$')"
 
@@ -105,44 +143,56 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 	DATA[LANG]=${splited[1]}
 
 	LABEL=""
+	LABELHTML=""
 	IFS=' '
 	for INDEX in $(echo $mask | sed "s/@/ /g")
 	do		
 		if [ "${DATA[$INDEX]}" != "" ]; then
 			LABEL+="${DATA[$INDEX]}@"
-		fi		
+		fi					
 	done
+
+	LABELHTML="${DATA[DATE]}##${DATA[TIME]}##${DATA[TIMEZONE]}##${DATA[SPORT]}##${DATA[COMPETITION]}##${DATA[EVENT]}##${DATA[LANG]}"
+	
 	if [[ -n "${channels[0]}" ]]; then
 		channel=${channels[0]}
 		echo \#EXTINF:-1,"$LABEL@$channel" >> $m3ufileevents
-
+	    echo \#EXTINF:-1,"$LABEL@$channel" >> $m3ufileeventsap
 
 		link="acestream://${CHANNELSIDS[$channel]}"
+		echo $link >> $m3ufileeventsap
 
 		if [ -n ${PROXY} ] 
 		then
 			if [ "${PROXY}" = "1" ]
 			then
-				link="http://127.0.0.1:${PORTPROXY:- 8000}/pid/${CHANNELSIDS[$channel]}/stream.mp4"		
+				link="http://${HOSTIP}:${PORTPROXY:- 8000}/pid/${CHANNELSIDS[$channel]}/stream.mp4"		
 			fi
 		fi
 		echo $link >> $m3ufileevents
-		
+		echo "$LABELHTML##$EventDateToMyTimeZoneF##$channel##$link" >> $eventstohtml
+
 		if [[ -n "${channels[1]}" ]]; then
 			channel=${channels[1]}
-			echo \#EXTINF:-1,"$LABEL@$channel" >> $m3ufileevents
+		
+			echo \#EXTINF:-1,"$LABEL@$channel" >> $m3ufileeventsap
 
 			link="acestream://${CHANNELSIDS[$channel]}"
+			echo $link >> $m3ufileeventsap
 
 			if [ -n ${PROXY} ] 
 			then
 				if [ "${PROXY}" = "1" ]
 				then
-					link="http://127.0.0.1:${PORTPROXY:- 8000}/pid/${CHANNELSIDS[$channel]}/stream.mp4"		
+				    echo \#EXTINF:-1,"$LABEL@$channel" >> $m3ufileevents
+					link="http://${HOSTIP}:${PORTPROXY:- 8000}/pid/${CHANNELSIDS[$channel]}/stream.mp4"	
+					echo $link >> $m3ufileevents
+						
 				fi
 			fi
-			echo $link >> $m3ufileevents
-			
+
+
+			echo "$LABELHTML##$EventDateToMyTimeZoneF##$channel##$link" >> $eventstohtml
 		fi		
 	fi
      

@@ -18,45 +18,81 @@
  # 
 #>
 
-Register-EngineEvent -SourceIdentifier PowerShell.Exiting -SupportEvent -Action {
-    try{
-        docker stop aceproxy | Out-Null
-    }catch{
-       
-    }
-}
+$env:HostIP = ( `
+    Get-NetIPConfiguration | `
+    Where-Object { `
+        $_.IPv4DefaultGateway -ne $null `
+        -and `
+        $_.NetAdapter.Status -ne "Disconnected" `
+    } `
+).IPv4Address.IPAddress
 
-try{
-    docker stop aceproxy | Out-Null
-}catch{
-   
-}
 
 $scriptpath = $MyInvocation.MyCommand.Path
-$dir = Split-Path $scriptpath
-cd $dir
+$dirinit = Split-Path $scriptpath
+cd $dirinit
 
 $conf = Get-Content '.env' | Select -Skip 1 | ConvertFrom-StringData
 
-docker-compose up
-docker-compose down
-
-start $conf.ACESTREAM_OR_VLC_PATH "./playlist/events.m3u --no-qt-error-dialogs"
 
 
-if($conf.PROXY -eq "1") {   
+Write-Host "Cleaning playlist content..."
 
-    try{
-        echo "If you stop or close this window transmition stops and nothing will be saved!"
-        docker run --rm -it --name aceproxy -p  "$($conf.PORTPROXY):8000" -v "${PWD}/code/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf" ikatson/aceproxy | Out-Null
-        echo "Se ha cerrado todo"
-    }catch{
-        Write-Host "Aceproxy is already running" -ForegroundColor red
+Remove-Item .\playlist\*.m3u
+Remove-Item .\playlist\*.txt
+
+Write-Host "Init containers scraper, aceproxy and webacestream..."
+
+docker-compose up -d
+$check=""
+Write-Host "Waiting for scraper "
+while ($check.Length -eq 0) {	
+    Write-Host -NoNewline "."
+    if($(docker ps -aq -f status=exited -f name=scraper)){
+        $check="checked"
     }
+    Start-Sleep 1 
+}
+Write-Host "Scraper is already " -ForegroundColor green
+
+if($conf.PROXY -eq "1"){
+
+    Write-Host -NoNewline "Waiting for aceproxy "
+    $parse=""
+    while ($parse.Length -eq 0) {	
+        Write-Host -NoNewline "."
+        $parse=$(docker logs aceproxy | select-string -Pattern "INFO success: acehttp" ) 
+        Start-Sleep 1 
+    }
+    Write-Host ""
+    Write-Host "Aceproxy container already loaded " -ForegroundColor green
+    Write-Host "*************************************************" -ForegroundColor green
+    Write-Host "*                                               *" -ForegroundColor green
+    Write-Host "*         http://$($env:HostIP):$($conf.WEBPORT)/         *" -ForegroundColor green
+    Write-Host "*                                               *" -ForegroundColor green
+    Write-Host "*************************************************" -ForegroundColor green
+    start  "http://$($env:HostIP):$($conf.WEBPORT)/"
+
+    Write-Host "* You should install protocol register from vlcbat folder, if you will access from another computer in same network we should install it there also "
+    Write-Host "* You can create a shortcut if you want, there a script to do it createShortcut.ps1 "
+    Write-Host "* If you want remove everything you have a script removeAll.ps1"
+    Write-Host "* In mobile Android you should also have vlc installed " 
+    Write-Host "* With your vlc you can send event to your CHROMECAST device, if you are in the same network " 
+    Write-Host "* If anything goes wrong chek your firewall, antivirus, and that all devices are in the same network "
+
+ 
+}else{
+    docker stop aceproxy webacestream
+    docker rm aceproxy webacestream
     
+    Write-Host "We will open your vlc instance with event playlist " -ForegroundColor green
+    start $conf.VLC_PATH "./playlist/events.m3u --no-qt-error-dialogs"
+
 }
 
-return
+ 
+Write-Host "Check the playlist folder and use it with vlc if you have proxy actived or you acetreamplayer if you already have installed in your computer " -ForegroundColor green
+
 
 
 

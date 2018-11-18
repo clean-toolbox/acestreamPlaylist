@@ -10,7 +10,25 @@ services:
       DOMAIN: ${DOMAIN}
       MASK: ${MASK}
       FOLDERSHARED: ${FOLDERSHARED}
+      HOSTIP: ${HOSTIP}
       PROXY: ${PROXY}
       PORTPROXY: ${PORTPROXY}
+      IGNOREPASTEVENTS: ${IGNOREPASTEVENTS}
+      PASTEVENTSTHRESOLDHOURS: ${PASTEVENTSTHRESOLDHOURS}
     entrypoint:
-      - /code/entrypoint.sh   
+      - /code/entrypoint.sh
+  aceproxy:
+    image: ikatson/aceproxy
+    container_name: aceproxy
+    ports:
+      - "${PORTPROXY}:8000" 
+    volumes:
+      - "./code/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf" 
+  webacestream:
+    build: .   
+    container_name: webacestream 
+    volumes:
+    - "./html:/var/www/html"
+    - "./playlist/:/playlist"
+    ports:
+      - "${WEBPORT:-8181}:80"
